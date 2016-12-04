@@ -1,28 +1,28 @@
 #include <string.h>
+unsigned long time;
 String ID="01";
 String RXstring = "";
-String CMD[5];
+int STAT[]={0,0,0,0,0,0,0,0,0,0};
+String CMD[7];
 boolean RXline = false;
 char  RXchar[30];
 int retval;
 void setup() {
-  // put your setup code here, to run once:
+  time=millis();
   Serial.begin(9600);
-  char MOD="OUTPUT";
-  pinMode(2,MOD);
+  pinMode(2,OUTPUT);
   digitalWrite(2,HIGH);
-  pinMode(3,MOD);
+  pinMode(3,OUTPUT);
   digitalWrite(3,HIGH);
-  pinMode(4,MOD);
+  pinMode(4,OUTPUT);
   digitalWrite(4,HIGH);
-  pinMode(5,MOD);
+  pinMode(5,OUTPUT);
   digitalWrite(5,HIGH);
   
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly
  if (RXline) {
       int pt=1;
       int str_len = RXstring.length();
@@ -33,20 +33,23 @@ void loop() {
       while (pch != NULL)
           {
         CMD[pt]=(String)pch;
-        Serial.print(pt);
-        Serial.print("    ");
-        Serial.println(CMD[pt]);
         pch = strtok (NULL, ";");
         pt=pt+1;
         }
         if (CMD[1] == ID ) {
            exec();
         }
+        Serial.print(ID+";");
+        Serial.print(CMD[5]+";");
+        Serial.println(str_len);
+      
 RXstring = "";
 RXline = false;
  Serial.println("-------------------------"); 
  }
+
 }
+
 
 
 void serialEvent() {
@@ -61,18 +64,20 @@ void serialEvent() {
 }
 
 void exec() {
-  Serial.println("action..");
+  Serial.println("command received");
   if(CMD[2]=="2") {
-    Serial.println("writing");
     if(CMD[4]=="1") {
-      Serial.println("on");
+      STAT[CMD[3].toInt()]=1;
+      Serial.println(CMD[3]+" on");
       digitalWrite(CMD[3].toInt(),LOW);
     }
     if(CMD[4]=="0") {
-      Serial.println("off");
+      STAT[CMD[3].toInt()]=0;
+      Serial.println(CMD[3]+" off");
       digitalWrite(CMD[3].toInt(),HIGH);
     }
     }
   return 1;
 }
+
 
