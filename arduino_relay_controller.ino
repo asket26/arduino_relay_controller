@@ -1,15 +1,26 @@
 #include <string.h>
+#include <EEPROM.h>
+// 1 поле - ID пакета
+// 2 поле - контрольная сумма остальных полей
+// 3 поле  -ID устройства
+// 4 поле  -команда
+// 5 поле  - данные
 unsigned long time;
-String ID="01";
+int ID=EEPROM.read(0);
 String RXstring = "";
 int STAT[]={0,0,0,0,0,0,0,0,0,0};
 String CMD[7];
 boolean RXline = false;
 char  RXchar[30];
 int retval;
+
+
 void setup() {
   time=millis();
   Serial.begin(9600);
+  String VID=eeprom_read(0,1);
+  Serial.print("device ID is ");
+  Serial.println(VID.toInt());
   pinMode(2,OUTPUT);
   digitalWrite(2,HIGH);
   pinMode(3,OUTPUT);
@@ -36,12 +47,30 @@ void loop() {
         pch = strtok (NULL, ";");
         pt=pt+1;
         }
-        if (CMD[1] == ID ) {
+        
+        if (CMD[3].toInt() == ID ) {
+          int serpayload=(CMD[3].toInt()+CMD[4].toInt()+CMD[5].toInt());
+          Serial.println(serpayload);
+          if ( serpayload == CMD[2].toInt()) {
+           Serial.print(CMD[1]);
+           Serial.print(";");
+           Serial.print(CMD[2]);
+           Serial.print(";");
+           Serial.print("1");
+           Serial.println(";");
            exec();
+           }
+           else
+           {
+           Serial.print(CMD[1]);
+           Serial.print(";");
+           Serial.print(CMD[2]);
+           Serial.print(";");
+           Serial.print("2");
+           Serial.println(";");
+           }
+           
         }
-        Serial.print(ID+";");
-        Serial.print(CMD[5]+";");
-        Serial.println(str_len);
       
 RXstring = "";
 RXline = false;
@@ -65,19 +94,39 @@ void serialEvent() {
 
 void exec() {
   Serial.println("command received");
-  if(CMD[2]=="2") {
-    if(CMD[4]=="1") {
-      STAT[CMD[3].toInt()]=1;
-      Serial.println(CMD[3]+" on");
-      digitalWrite(CMD[3].toInt(),LOW);
+  switch(CMD[4].toInt()) {
+    case 0:
+       STAT[CMD[5].toInt()]=0;
+       Serial.println(CMD[5]+" off");
+       digitalWrite(CMD[5].toInt(),HIGH);
+       break;
+    case 1:
+      STAT[CMD[5].toInt()]=1;
+      Serial.println(CMD[5]+" on");
+      digitalWrite(CMD[5].toInt(),LOW);
+      break;
+    case 9:
+       Serial.print("change ID from ");
+      Serial.print(ID);
+      Serial.print(" to ");
+      ID=CMD[5].toInt();
+      Serial.println(ID);
+      EEPROM.write(0, ID); 
+      break;
     }
-    if(CMD[4]=="0") {
-      STAT[CMD[3].toInt()]=0;
-      Serial.println(CMD[3]+" off");
-      digitalWrite(CMD[3].toInt(),HIGH);
-    }
-    }
-  return 1;
+    return 1;
 }
+
+
+String eeprom_read(int sector_start, int sector_len) {
+  int ccount=0;
+  String result="";
+  while (sector_len > ccount) {
+    byte Cell = EEPROM.read(sector_start+ccount);
+    result=result += Cell;
+    ccount +=1;
+  }
+  return result;
+};
 
 
